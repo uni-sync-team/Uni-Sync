@@ -1,0 +1,79 @@
+services:
+
+  # Laravel application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        UID: ${LOCAL_UID:-1000}
+        GID: ${LOCAL_GID:-1000}
+
+    container_name: uni-sync-app
+
+    restart: unless-stopped
+
+    working_dir: /var/www/html
+
+    volumes:
+      - .:/var/www/html
+
+    ports:
+      - "8000:8000"
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # MariaDB database
+  db:
+    image: mariadb:11
+
+    container_name: uni-sync-db
+
+    restart: unless-stopped
+
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-unisync123}
+      MARIADB_DATABASE: ${DB_DATABASE:-uni_sync}
+      MARIADB_USER: ${DB_USERNAME:-uni_sync_user}
+      MARIADB_PASSWORD: ${DB_PASSWORD:-unisync123}
+
+    ports:
+      - "3307:3306"
+
+    volumes:
+      - db_data:/var/lib/mysql
+
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # Frontend development environment
+  node:
+    image: node:22-alpine
+
+    container_name: uni-sync-node
+
+    working_dir: /var/www/html
+
+    volumes:
+      - .:/var/www/html
+      - node_modules:/var/www/html/node_modules
+
+    ports:
+      - "5173:5173"
+
+    command: >
+      sh -c "if [ -f package-lock.json ];
+             then npm ci;
+             else npm install;
+             fi &&
+             npm run dev -- --host 0.0.0.0"
+
+volumes:
+  db_data:
+  node_modules:
