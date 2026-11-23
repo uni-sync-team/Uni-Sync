@@ -14,10 +14,18 @@ return new class extends Migration
             $table->string('description', 255)->nullable();
             $table->timestamps();
         });
+
+        // replaces userRole
+        Schema::create('role_user', function (Blueprint $table) {
+            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('role_id')->constrained('roles')->cascadeOnDelete();
+            $table->primary(['user_id', 'role_id']);
+        });
     }
 
     public function down(): void
     {
+        Schema::dropIfExists('role_user');
         Schema::dropIfExists('roles');
     }
 };

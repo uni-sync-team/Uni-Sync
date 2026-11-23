@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('notifications', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('utilisateurs')->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->text('message');
             $table->timestamp('date_creation')->useCurrent();
             $table->boolean('lu')->default(false);
